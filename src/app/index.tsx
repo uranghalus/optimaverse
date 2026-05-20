@@ -1,4 +1,6 @@
+import { useAuth } from "@/context/auth-context";
 import { AuthService } from "@/services/auth";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Button, Colors, Text, TextField, Toast, View } from "react-native-ui-lib";
 
@@ -11,7 +13,7 @@ export default function Index() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastColor, setToastColor] = useState(Colors.red30);
-
+  const { setIsAuthenticated } = useAuth();
   // 2. Fungsi helper untuk memicu Toast
   const displayToast = (message: string, color: string = Colors.red30) => {
     setToastMessage(message);
@@ -32,9 +34,9 @@ export default function Index() {
       if (result.status === 'success') {
         // Gunakan warna hijau untuk sukses
         displayToast('Login Berhasil!', Colors.green30);
-
-        // TODO: Navigasi ke Halaman Home/Dashboard
-        // navigation.replace('Home');
+        // 3. BERITAHU LAYOUT BAHWA KITA SUDAH LOGIN!
+        setIsAuthenticated(true);
+        router.replace('/home');
       }
     } catch (error: any) {
       displayToast(error.message || 'Login Gagal');
