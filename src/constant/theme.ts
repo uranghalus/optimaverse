@@ -6,8 +6,8 @@ const isSmallScreen = width < 375;
 
 export const setupTheme = () => {
   Colors.loadColors({
-    pink: '#FF69B4',
-    gold: '#FFD700',
+    primary: '#009DDC',
+    secondary: '#FFD700',
   });
 
   Typography.loadTypographies({

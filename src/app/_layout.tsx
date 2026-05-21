@@ -4,10 +4,8 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { Colors, LoaderScreen, View } from "react-native-ui-lib";
 
-
 setupTheme();
 
-// Komponen ini mengatur navigasi setelah context/state tersedia
 function RootLayoutNav() {
   const { isAuthenticated, isChecking } = useAuth();
   const router = useRouter();
@@ -16,11 +14,14 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isChecking) return;
 
-    const inAuthGroup = segments[0] === 'home';
+    // Ubah pengecekan segment ke '(tabs)'
+    const inAuthGroup = segments[0] === '(tabs)';
 
     if (isAuthenticated && !inAuthGroup) {
-      router.replace('/home');
+      // Jika sudah login tapi belum di dalam tab, arahkan ke tab
+      router.replace('/(tabs)');
     } else if (!isAuthenticated && inAuthGroup) {
+      // Jika belum login tapi mencoba masuk tab, kembalikan ke index (login)
       router.replace('/');
     }
   }, [isAuthenticated, isChecking, segments]);
@@ -35,13 +36,15 @@ function RootLayoutNav() {
 
   return (
     <Stack>
+      {/* Layar Login / Unauthenticated */}
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="home/index" options={{ headerShown: false, animation: 'fade' }} />
+
+      {/* Layar Tabs / Authenticated (menggantikan home/index) */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
     </Stack>
   );
 }
 
-// Komponen Utama Layout
 export default function RootLayout() {
   return (
     <AuthProvider>

@@ -36,7 +36,7 @@ export default function Index() {
         displayToast('Login Berhasil!', Colors.green30);
         // 3. BERITAHU LAYOUT BAHWA KITA SUDAH LOGIN!
         setIsAuthenticated(true);
-        router.replace('/home');
+        router.replace('/(tabs)');
       }
     } catch (error: any) {
       displayToast(error.message || 'Login Gagal');
