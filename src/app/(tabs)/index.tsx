@@ -1,4 +1,5 @@
 import TouchableScale from '@/components/touchable-scale';
+import { useAuth } from '@/context/auth-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Platform, ScrollView, StatusBar, StyleSheet } from 'react-native';
@@ -9,7 +10,7 @@ import { Badge, Text, View } from 'react-native-ui-lib';
 
 export default function HomeScreen() {
     const insets = useSafeAreaInsets();
-
+    const { user } = useAuth()
     return (
         <View flex bg-white>
             <StatusBar barStyle="light-content" backgroundColor="#00A3E0" />
@@ -26,7 +27,7 @@ export default function HomeScreen() {
                         <View style={styles.headerTopRow}>
                             <View>
                                 <Text style={styles.greetingText}>Good Day For Shopping</Text>
-                                <Text style={styles.nameText}>Jack Elliot</Text>
+                                <Text style={styles.nameText}>{user.name}</Text>
                             </View>
                             <TouchableScale style={styles.bellContainer}>
                                 <Icon name="notification-3-line" size={26} color="white" />

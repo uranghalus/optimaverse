@@ -11,9 +11,12 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.6.11",
+    "@opentelemetry/api": "^1.9.1",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
+    "better-auth": "^1.6.11",
     "expo": "~55.0.25",
     "expo-constants": "~55.0.16",
     "expo-device": "~55.0.17",
@@ -22,7 +25,9 @@
     "expo-image": "~55.0.10",
     "expo-linear-gradient": "^55.0.14",
     "expo-linking": "~55.0.15",
+    "expo-network": "^56.0.4",
     "expo-router": "~55.0.15",
+    "expo-secure-store": "^56.0.4",
     "expo-splash-screen": "~55.0.21",
     "expo-status-bar": "~55.0.6",
     "expo-symbols": "~55.0.9",

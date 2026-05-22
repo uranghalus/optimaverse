@@ -1,6 +1,5 @@
 import { useAuth } from "@/context/auth-context";
 import { AuthService } from "@/services/auth";
-import { router } from "expo-router";
 import { useState } from "react";
 import { Button, Colors, Text, TextField, Toast, View } from "react-native-ui-lib";
 
@@ -13,7 +12,8 @@ export default function Index() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastColor, setToastColor] = useState(Colors.red30);
-  const { setIsAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+
   // 2. Fungsi helper untuk memicu Toast
   const displayToast = (message: string, color: string = Colors.red30) => {
     setToastMessage(message);
@@ -23,23 +23,35 @@ export default function Index() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      displayToast('Email dan Password wajib diisi');
+      displayToast(
+        'Email dan Password wajib diisi'
+      );
+
       return;
     }
 
     setIsLoading(true);
-    try {
-      const result = await AuthService.login({ email, password });
 
-      if (result.status === 'success') {
-        // Gunakan warna hijau untuk sukses
-        displayToast('Login Berhasil!', Colors.green30);
-        // 3. BERITAHU LAYOUT BAHWA KITA SUDAH LOGIN!
-        setIsAuthenticated(true);
-        router.replace('/(tabs)');
+    try {
+      const result =
+        await AuthService.login({
+          email,
+          password,
+        });
+
+      if (result) {
+        displayToast(
+          'Login Berhasil!',
+          Colors.green30
+        );
+
+        // Tidak perlu set auth
+        // Tidak perlu router.replace
       }
     } catch (error: any) {
-      displayToast(error.message || 'Login Gagal');
+      displayToast(
+        error.message || 'Login Gagal'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -66,19 +78,17 @@ export default function Index() {
         validate={['required', 'email']}
         validationMessage={['Field ini wajib diisi', 'Email tidak valid']}
         showClearButton
-        // fo dihapus dari sini
         fieldStyle={{
           borderWidth: 1,
           borderColor: Colors.grey50,
           padding: 16,
-          borderRadius: 8, // Tambahan agar sudut membulat
+          borderRadius: 8,
           marginBottom: 10,
         }}
       />
 
       <TextField
         placeholder="Password"
-
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -88,7 +98,7 @@ export default function Index() {
         fieldStyle={{
           borderWidth: 1,
           borderColor: Colors.grey50,
-          padding: 16, // Disamakan dengan email (sebelumnya 4)
+          padding: 16,
           borderRadius: 8,
           marginBottom: 20,
         }}

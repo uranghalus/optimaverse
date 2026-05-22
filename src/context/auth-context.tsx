@@ -1,32 +1,61 @@
-// context/AuthContext.tsx
-import { AuthService } from '@/services/auth';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+    createContext,
+    useContext,
+} from "react";
 
-const AuthContext = createContext<any>(null);
+import { authClient } from "@/lib/auth-client";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isChecking, setIsChecking] = useState(true);
+type AuthContextType = {
+    session: any;
+    user: any;
 
-    useEffect(() => {
-        const checkSession = async () => {
-            try {
-                const session = await AuthService.getSession();
-                setIsAuthenticated(session && session.status === 'success');
-            } catch (error) {
-                setIsAuthenticated(false);
-            } finally {
-                setIsChecking(false);
-            }
-        };
-        checkSession();
-    }, []);
+    isAuthenticated: boolean;
+    isChecking: boolean;
+};
+
+const AuthContext =
+    createContext<AuthContextType | null>(
+        null
+    );
+
+export function AuthProvider({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    const {
+        data: session,
+        isPending,
+    } = authClient.useSession();
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated, isChecking }}>
+        <AuthContext.Provider
+            value={{
+                session,
+
+                user:
+                    session?.user ?? null,
+
+                isAuthenticated:
+                    !!session?.user,
+
+                isChecking: isPending,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+    const context =
+        useContext(AuthContext);
+
+    if (!context) {
+        throw new Error(
+            "useAuth must be used inside AuthProvider"
+        );
+    }
+
+    return context;
+}

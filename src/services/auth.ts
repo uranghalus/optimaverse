@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/constant/api';
+import { authClient } from '@/lib/auth-client';
 
 export interface LoginPayload {
   email: string;
@@ -8,35 +8,16 @@ export interface LoginPayload {
 export const AuthService = {
   login: async (payload: LoginPayload) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(payload),
+      // 2. Gunakan metode signIn.email dari Better Auth
+      const { data, error } = await authClient.signIn.email({
+        email: payload.email,
+        password: payload.password,
+        rememberMe: payload.rememberMe,
       });
 
-      // 1. Ambil response sebagai teks terlebih dahulu, BUKAN langsung .json()
-      const responseText = await response.text();
-
-      let data;
-      try {
-        // 2. Coba parse teks tersebut menjadi JSON
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        // Jika gagal di-parse, berarti server mengembalikan HTML error atau kosong
-        console.error(
-          'SERVER TIDAK MENGEMBALIKAN JSON. Respons server:',
-          responseText,
-        );
-        throw new Error(
-          `Error Server (${response.status}): Tidak dapat memproses permintaan.`,
-        );
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Gagal melakukan login');
+      // Better Auth mengembalikan object { data, error } alih-alih melempar exception pada status 4xx/5xx
+      if (error) {
+        throw new Error(error.message || 'Gagal melakukan login');
       }
 
       return data;
@@ -51,19 +32,11 @@ export const AuthService = {
    */
   getSession: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/session`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          // Cookie akan dikirim secara otomatis oleh React Native
-        },
-      });
+      // 3. Gunakan metode getSession bawaan
+      const { data, error } = await authClient.getSession();
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Jika 401 Unauthorized, berarti sesi habis atau belum login
-        return null;
+      if (error || !data) {
+        return null; // Sesi habis atau belum login
       }
 
       return data;
@@ -78,17 +51,11 @@ export const AuthService = {
    */
   logout: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/logout`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
+      // 4. Gunakan metode signOut bawaan
+      const { data, error } = await authClient.signOut();
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Gagal logout');
+      if (error) {
+        throw new Error(error.message || 'Gagal logout');
       }
 
       return data;
