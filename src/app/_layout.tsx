@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from "@/context/auth-context";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { Colors, LoaderScreen, View } from "react-native-ui-lib";
+// 1. IMPORT SafeAreaProvider
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 setupTheme();
 
@@ -14,14 +16,11 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isChecking) return;
 
-    // Ubah pengecekan segment ke '(tabs)'
     const inAuthGroup = segments[0] === '(tabs)';
 
     if (isAuthenticated && !inAuthGroup) {
-      // Jika sudah login tapi belum di dalam tab, arahkan ke tab
       router.replace('/(tabs)');
     } else if (!isAuthenticated && inAuthGroup) {
-      // Jika belum login tapi mencoba masuk tab, kembalikan ke index (login)
       router.replace('/');
     }
   }, [isAuthenticated, isChecking, segments]);
@@ -36,10 +35,7 @@ function RootLayoutNav() {
 
   return (
     <Stack>
-      {/* Layar Login / Unauthenticated */}
       <Stack.Screen name="index" options={{ headerShown: false }} />
-
-      {/* Layar Tabs / Authenticated (menggantikan home/index) */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
     </Stack>
   );
@@ -47,8 +43,11 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    // 2. BUNGKUS DENGAN SafeAreaProvider
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
