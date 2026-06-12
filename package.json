@@ -13,11 +13,13 @@
   "dependencies": {
     "@better-auth/expo": "^1.6.11",
     "@opentelemetry/api": "^1.9.1",
+    "@react-native-masked-view/masked-view": "0.3.2",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
     "better-auth": "^1.6.11",
     "expo": "~55.0.25",
+    "expo-camera": "~55.0.19",
     "expo-constants": "~55.0.16",
     "expo-device": "~55.0.17",
     "expo-font": "~55.0.8",

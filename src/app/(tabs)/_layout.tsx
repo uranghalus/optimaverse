@@ -1,10 +1,11 @@
+import { setupTheme } from "@/constant/theme";
 import { Tabs } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-remix-icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "react-native-ui-lib";
-
+setupTheme();
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
 

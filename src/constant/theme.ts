@@ -10,8 +10,17 @@ export const setupTheme = () => {
     secondary: '#FFD700',
     danger: '#A71D31',
     white: '#FFFFFF',
-    black: '#000000',
-    gray: '#95A5A6',
+    black: '#3B3B3B',
+    gray: '#59656F',
+    lightGray: '#ACA9BB',
+
+    // Status Colors
+    statusRusakBg: '#fee2e2',
+    statusRusakText: '#ef4444',
+    statusTersediaBg: '#ecfdf5',
+    statusTersediaText: '#10b981',
+    statusDipinjamBg: '#ffedd5',
+    statusDipinjamText: '#f97316',
   });
 
   Typography.loadTypographies({
