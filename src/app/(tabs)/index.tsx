@@ -1,20 +1,82 @@
 import AnimatedCounter from "@/components/animated-counter";
 import TouchableScale from "@/components/touchable-scale";
-import { useAuth } from "@/context/auth-context";
-import React, { useRef } from "react";
-import { Animated, Platform, StatusBar, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, Animated, Platform, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-remix-icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Badge, Colors, Text } from "react-native-ui-lib";
+import { ActionSheet, Badge, Colors, Text } from "react-native-ui-lib";
+
+// Pastikan path ini sesuai dengan lokasi inisialisasi Better Auth Client Anda
+import { useAuth } from "@/context/auth-context";
+import { authClient } from "@/lib/auth-client";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const TOP_BAR_HEIGHT =
-    Platform.OS === "ios" ? insets.top + 75 : insets.top + 80;
+  // 1. PANGGIL HOOKS BETTER AUTH DI LEVEL TERATAS
+  const { user } = useAuth()
+  const { data: organizations, isPending: isOrgsLoading } = authClient.useListOrganizations();
+  const { data: activeOrg, isPending: isActiveOrgLoading } = authClient.useActiveOrganization();
+
+
+
+  // 2. STATE UI
+  const [showOrgPicker, setShowOrgPicker] = useState(false);
+  const [isSettingActive, setIsSettingActive] = useState(false);
+
+  // 3. LOGIKA PAKSA PEMILIHAN UNTUK OWNER
+  useEffect(() => {
+    if (!isOrgsLoading && !isActiveOrgLoading && organizations && user) {
+      const isSystemOwner = user.role === "owner" || user.role === "admin";
+
+      // Jika belum ada yang aktif, dan dia Owner dengan >1 org, paksa buka menu
+      if (!activeOrg && isSystemOwner && organizations.length > 1) {
+        setShowOrgPicker(true);
+      }
+    }
+  }, [isOrgsLoading, isActiveOrgLoading, organizations, activeOrg, user]);
+
+  // 4. FUNGSI SET ACTIVE (Vanilla Method)
+  const handleSelectOrganization = async (orgId: string) => {
+    setShowOrgPicker(false);
+    setIsSettingActive(true);
+
+    try {
+      const { error } = await authClient.organization.setActive({
+        organizationId: orgId
+      });
+
+      if (error) {
+        Alert.alert("Gagal", error.message || "Gagal mengubah organisasi");
+      }
+      // Tidak perlu set state manual, useActiveOrganization() akan otomatis memicu re-render
+    } catch (err) {
+      Alert.alert("Error", "Koneksi terputus dengan server");
+    } finally {
+      setIsSettingActive(false);
+    }
+  };
+
+  // 5. PERSIAPAN DATA RENDER
+  const actionSheetOptions = organizations?.map((org) => ({
+    label: org.name,
+    onPress: () => handleSelectOrganization(org.id),
+  })) || [];
+
+  actionSheetOptions.push({
+    label: "Batal",
+    onPress: async () => setShowOrgPicker(false),
+  });
+
+  const isLoading = isOrgsLoading || isActiveOrgLoading || isSettingActive;
+  const canSelectOrg = user?.role === "owner" || user?.role === "admin";
+
+  const displayOrgName = activeOrg?.name
+    || (organizations && organizations.length > 0 ? organizations[0].name : "Pilih Organisasi...");
+
+  // 6. PERHITUNGAN ANIMASI & LAYOUT
+  const TOP_BAR_HEIGHT = Platform.OS === "ios" ? insets.top + 75 : insets.top + 80;
   const SCROLL_DISTANCE = 90;
 
   const whiteOpacity = scrollY.interpolate({
@@ -46,8 +108,22 @@ export default function HomeScreen() {
       >
         <View style={styles.headerTopRow}>
           <View>
-            <Text style={styles.greetingText}>Bagaimana harimu hari ini?</Text>
-            <Text style={styles.nameText}>{user?.name || "Jack Elliot"}</Text>
+            <Text style={styles.greetingText}>Halo, {user?.name || "Username"}</Text>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => canSelectOrg && organizations && organizations.length > 0 && setShowOrgPicker(true)}
+              style={styles.dropdownTrigger}
+              disabled={!canSelectOrg || isLoading || !organizations || organizations.length === 0}
+            >
+              <Text style={styles.nameText}>
+                {isLoading ? "Memuat..." : displayOrgName}
+              </Text>
+
+              {canSelectOrg && organizations && organizations.length > 0 && (
+                <Icon name="arrow-down-s-line" size={24} color="white" />
+              )}
+            </TouchableOpacity>
           </View>
           <TouchableScale style={styles.bellContainer}>
             <Icon name="notification-3-line" size={26} color="white" />
@@ -109,33 +185,19 @@ export default function HomeScreen() {
           {/* Ringkasan Asset Cards */}
           <View style={styles.summaryGrid}>
             <View style={styles.gridRow}>
-              <TouchableScale
-                style={[styles.summaryCard, styles.cardMarginRight]}
-              >
+              <TouchableScale style={[styles.summaryCard, styles.cardMarginRight]}>
                 <View style={styles.cardHeader}>
-                  <View
-                    style={[
-                      styles.iconBox,
-                      { backgroundColor: Colors.primary },
-                    ]}
-                  >
+                  <View style={[styles.iconBox, { backgroundColor: Colors.primary }]}>
                     <Icon name="box-3-line" size={22} color="white" />
                   </View>
-                  <AnimatedCounter
-                    targetValue={50025}
-                    style={styles.valueText}
-                  />
+                  <AnimatedCounter targetValue={50025} style={styles.valueText} />
                 </View>
                 <Text style={styles.labelText}>Total Aset Aktif</Text>
               </TouchableScale>
 
-              <TouchableScale
-                style={[styles.summaryCard, styles.cardMarginLeft]}
-              >
+              <TouchableScale style={[styles.summaryCard, styles.cardMarginLeft]}>
                 <View style={styles.cardHeader}>
-                  <View
-                    style={[styles.iconBox, { backgroundColor: "#10B981" }]}
-                  >
+                  <View style={[styles.iconBox, { backgroundColor: "#10B981" }]}>
                     <Icon name="file-transfer-line" size={22} color="white" />
                   </View>
                   <AnimatedCounter targetValue={12} style={styles.valueText} />
@@ -145,13 +207,9 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.gridRow}>
-              <TouchableScale
-                style={[styles.summaryCard, styles.cardMarginRight]}
-              >
+              <TouchableScale style={[styles.summaryCard, styles.cardMarginRight]}>
                 <View style={styles.cardHeader}>
-                  <View
-                    style={[styles.iconBox, { backgroundColor: "#8B5CF6" }]}
-                  >
+                  <View style={[styles.iconBox, { backgroundColor: "#8B5CF6" }]}>
                     <Icon name="hand-heart-line" size={22} color="white" />
                   </View>
                   <AnimatedCounter targetValue={340} style={styles.valueText} />
@@ -159,13 +217,9 @@ export default function HomeScreen() {
                 <Text style={styles.labelText}>Aset Dipinjam</Text>
               </TouchableScale>
 
-              <TouchableScale
-                style={[styles.summaryCard, styles.cardMarginLeft]}
-              >
+              <TouchableScale style={[styles.summaryCard, styles.cardMarginLeft]}>
                 <View style={styles.cardHeader}>
-                  <View
-                    style={[styles.iconBox, { backgroundColor: "#F59E0B" }]}
-                  >
+                  <View style={[styles.iconBox, { backgroundColor: "#F59E0B" }]}>
                     <Icon name="building-4-line" size={22} color="white" />
                   </View>
                   <AnimatedCounter targetValue={8} style={styles.valueText} />
@@ -180,27 +234,17 @@ export default function HomeScreen() {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionHeadingDark}>Aktivitas Aset</Text>
           <View style={styles.activityCardsRow}>
-            <TouchableScale
-              style={[styles.activityCard, styles.cardMarginRight]}
-            >
+            <TouchableScale style={[styles.activityCard, styles.cardMarginRight]}>
               <Icon name="drag-move-2-line" size={26} color={Colors.primary} />
               <Text style={styles.activityLabel}>Mutasi Asset</Text>
             </TouchableScale>
 
-            <TouchableScale
-              style={[
-                styles.activityCard,
-                styles.cardMarginRight,
-                styles.cardMarginLeft,
-              ]}
-            >
+            <TouchableScale style={[styles.activityCard, styles.cardMarginRight, styles.cardMarginLeft]}>
               <Icon name="hand-heart-line" size={26} color="#8B5CF6" />
               <Text style={styles.activityLabel}>Pinjam Asset</Text>
             </TouchableScale>
 
-            <TouchableScale
-              style={[styles.activityCard, styles.cardMarginLeft]}
-            >
+            <TouchableScale style={[styles.activityCard, styles.cardMarginLeft]}>
               <Icon name="delete-bin-4-line" size={26} color="#EF4444" />
               <Text style={styles.activityLabel}>Disposal</Text>
             </TouchableScale>
@@ -213,9 +257,7 @@ export default function HomeScreen() {
 
           {[1, 2, 3].map((item) => (
             <TouchableScale key={item} style={styles.approvalCard}>
-              <View
-                style={[styles.approvalIconBox, { backgroundColor: "#EEF2FF" }]}
-              >
+              <View style={[styles.approvalIconBox, { backgroundColor: "#EEF2FF" }]}>
                 <Icon name="hand-heart-line" size={26} color="#6366F1" />
               </View>
               <View style={styles.approvalContent}>
@@ -239,6 +281,16 @@ export default function HomeScreen() {
           ))}
         </View>
       </Animated.ScrollView>
+
+      {/* Komponen Action Sheet Terintegrasi Dinamis */}
+      <ActionSheet
+        visible={showOrgPicker}
+        title="Pilih Organisasi"
+        message="Silakan pilih ruang lingkup organisasi OptiAssets"
+        cancelButtonIndex={actionSheetOptions.length - 1}
+        onDismiss={() => setShowOrgPicker(false)}
+        options={actionSheetOptions}
+      />
     </View>
   );
 }
@@ -275,6 +327,12 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.85)",
     marginBottom: 4,
     fontWeight: "500",
+  },
+  dropdownTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: -2,
   },
   nameText: {
     fontSize: 22,
@@ -405,11 +463,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderColor: "#f0f0f0",
     borderWidth: 1.5,
-    // shadowColor: "#8C86B7",
-    // shadowOffset: { width: 0, height: 0 },
-    // shadowOpacity: 1 / 100,
-    // shadowRadius: 0.5,
-    // elevation: 10,
   },
   approvalIconBox: {
     width: 56,
